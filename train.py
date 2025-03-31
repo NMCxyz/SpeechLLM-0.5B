@@ -3,9 +3,9 @@
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from trainer import SpeechLLMLightning
-from dataset import InstructionalAudioDataset, MyCollator
+from dataset import VLSPDataset, MyCollator  # Remove DataLoader from here
 from pytorch_lightning.strategies import DDPStrategy
-
+from torch.utils.data import DataLoader  # Add this import
 import torch.utils.data as data_utils
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import wandb
@@ -69,22 +69,41 @@ if __name__ == "__main__":
     print(model)
     tokenizer = model.llm_tokenizer
 
-    train_dataset = InstructionalAudioDataset(
-        csv_file = './data_samples/train.csv',
-        mode='train', 
-        random_keys_prob=0.2,
-        )
+    # train_dataset = InstructionalAudioDataset(
+    #     csv_file = './data_samples/train.csv',
+    #     mode='train', 
+    #     random_keys_prob=0.2,
+    #     )
 
-    val_dataset = InstructionalAudioDataset(
-        csv_file='./data_samples/dev.csv', 
-        mode='test'
-        )
+    # val_dataset = InstructionalAudioDataset(
+    #     csv_file='./data_samples/dev.csv', 
+    #     mode='test'
+    #     )
 
-    print(len(train_dataset), len(val_dataset))
+    # print(len(train_dataset), len(val_dataset))
 
+    # my_collator = MyCollator(model_config['audio_encoder_name'], tokenizer)
+    # train_loader = data_utils.DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=my_collator, num_workers=3)
+    # val_loader = data_utils.DataLoader(val_dataset, batch_size=1, shuffle=False, collate_fn=my_collator, num_workers=3)
+
+
+    train_dataset = VLSPDataset(split="train", streaming=True)
+    val_dataset = VLSPDataset(split="validation", streaming=True)
+
+    # Initialize data loaders
     my_collator = MyCollator(model_config['audio_encoder_name'], tokenizer)
-    train_loader = data_utils.DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=my_collator, num_workers=3)
-    val_loader = data_utils.DataLoader(val_dataset, batch_size=1, shuffle=False, collate_fn=my_collator, num_workers=3)
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=1,
+        num_workers=3,
+        collate_fn=my_collator
+    )
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=1,
+        num_workers=3,
+        collate_fn=my_collator
+    )
 
     checkpoint_callback = ModelCheckpoint(dirpath=f"checkpoints", filename=log_path+'-{epoch}', save_top_k=1, monitor="val/wer", save_last=True)
     safetensors_callback = SafetensorsSaveCallback(

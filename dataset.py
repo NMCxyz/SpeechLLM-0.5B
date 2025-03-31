@@ -193,10 +193,50 @@
 import torch
 from transformers import AutoProcessor, AutoFeatureExtractor
 from torch.utils.data import Dataset
+from datasets import load_dataset
 import torchaudio
 import pandas as pd
 import random
 import numpy as np
+
+
+class VLSPDataset(IterableDataset):
+    def __init__(self, split="train", streaming=True):
+        self.dataset = load_dataset("doof-ferb/vlsp2020_vinai_100h", split=split, streaming=streaming)
+        self.dataset.set_format(type="torch", columns=["audio", "transcription"])
+        self.instruction_phrases = [
+            "Chép lại âm thanh thành văn bản",
+            "Chuyển đổi lời nói này thành văn bản",
+            "Viết ra những gì đang được nói",
+            "Cung cấp bản ghi lại của âm thanh này",
+            "Nội dung của lời nói này là gì?",
+            "Cho tôi biết nội dung đang được nói trong bản ghi âm này",
+        ]
+
+    def __iter__(self):
+        for item in self.dataset:
+            # Get audio data
+            waveform = torch.tensor(item['audio']['array']).float()
+            # Reshape if needed
+            if len(waveform.shape) == 1:
+                waveform = waveform.unsqueeze(0)
+            
+            # Resample if needed
+            if item['audio']['sampling_rate'] != 16000:
+                resampler = torchaudio.transforms.Resample(
+                    item['audio']['sampling_rate'], 16000
+                )
+                waveform = resampler(waveform)
+
+            # Create prompts
+            instruction_phrase = random.choice(self.instruction_phrases)
+            pre_speech_prompt = f"Instruction:\n{instruction_phrase}\n\nInput:\n<speech>"
+            post_speech_prompt = "</speech>\n\nOutput:\n"
+            output_prompt = f'{{"Transcript": "{item["transcription"]}"}}'
+            complete_prompt = pre_speech_prompt + post_speech_prompt + output_prompt
+
+            yield waveform, pre_speech_prompt, post_speech_prompt, output_prompt, complete_prompt
+
 
 class MyCollator:
     def __init__(self, audio_encoder_name, tokenizer):
@@ -246,6 +286,55 @@ class MyCollator:
         
         return mel, pre_tokenized_ids, post_tokenized_ids, output_tokenized_ids
 
+
+class MyCollator:
+    def __init__(self, audio_encoder_name, tokenizer):
+        self.audio_encoder_name = audio_encoder_name
+        self.tokenizer = tokenizer
+        self.processor = AutoProcessor.from_pretrained("minicpm-o", trust_remote_code=True)
+        
+    def __call__(self, batch):
+        waveform, pre_speech_prompt, post_speech_prompt, output_prompt, complete_prompt = batch[0]
+        
+        if waveform is not None:
+            # Process audio through processor
+            audio_features, audio_feature_lens, _ = self.processor.audio_feature_extract(
+                [[waveform.squeeze().numpy()]], 
+                [[1]], 
+                chunk_input=True, 
+                sampling_rate=16000
+            )
+            mel = audio_features
+        else:
+            mel = None
+
+        # Tokenize prompts
+        pre_tokenized_ids = self.tokenizer(
+            pre_speech_prompt, 
+            padding="do_not_pad", 
+            return_tensors='pt', 
+            truncation=False, 
+            add_special_tokens=False
+        )["input_ids"]
+        
+        post_tokenized_ids = self.tokenizer(
+            post_speech_prompt,
+            padding="do_not_pad",
+            return_tensors='pt',
+            truncation=False,
+            add_special_tokens=False
+        )["input_ids"]
+        
+        output_tokenized_ids = self.tokenizer(
+            self.tokenizer.bos_token + output_prompt + self.tokenizer.eos_token,
+            padding="do_not_pad",
+            return_tensors='pt', 
+            truncation=False,
+            add_special_tokens=False
+        )["input_ids"]
+        
+        return mel, pre_tokenized_ids, post_tokenized_ids, output_tokenized_ids
+    
 class AudioDataset(Dataset):
     def __init__(self, csv_file, mode='train'):
         self.data_frame = pd.read_csv(csv_file)
