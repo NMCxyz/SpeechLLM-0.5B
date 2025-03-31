@@ -22,7 +22,7 @@ class SpeechLLMLightning(pl.LightningModule):
                  llm_dim=2048, 
                  audio_encoder_name="minicpm-o",
                  connector_name='minicpm-projection',
-                 llm_name="/mnt/4T2/thuctap/cuongnm75/MultimodalVisualVideoStreaming/Reference/MiniCPM-o/model/Qwen2.5-0.5B-Instruct", 
+                 llm_name="/kaggle/input/qwen2.5/transformers/0.5b/1", 
                  finetune_encoder=False,
                  finetune_connector=False,
                  finetune_llm=True,

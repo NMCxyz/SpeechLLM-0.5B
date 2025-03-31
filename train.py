@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 'llm_dim': 896, 
                 'audio_encoder_name': "minicpm-o", 
                 'connector_name': 'conformer',
-                'llm_name': "/mnt/4T2/thuctap/cuongnm75/MultimodalVisualVideoStreaming/Reference/MiniCPM-o/model/Qwen2.5-0.5B-Instruct",
+                'llm_name': "/kaggle/input/qwen2.5/transformers/0.5b/1",
                 'finetune_encoder': False,
                 'finetune_llm': True,
                 'finetune_connector': False,

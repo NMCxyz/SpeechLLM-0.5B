@@ -3,7 +3,7 @@ import json
 import sys
 from torch import nn
 from transformers import AutoModel
-sys.path.append("/mnt/4T2/thuctap/cuongnm75/MultimodalVisualVideoStreaming/EOT/whisper_streaming/speech_encoder")
+sys.path.append("./whisper_streaming/speech_encoder")
 from minicpmo_whisper import MiniCPMO_Whisper, MiniCPMWhisperEncoder, WhisperConfig
 from speechtokenizer import SpeechTokenizer
 
@@ -17,7 +17,7 @@ def get_audio_encoder(name, finetune_encoder):
 class MiniCPMAudioEncoder(nn.Module):
     def __init__(self, model_name = 'minicpmo', finetune=False):
         super().__init__()
-        audio_config = json.load(open("/mnt/4T2/thuctap/cuongnm75/MultimodalVisualVideoStreaming/EOT/whisper_streaming/infer/audio_config.json", "r"))
+        audio_config = json.load(open("./whisper_streaming/infer/audio_config.json", "r"))
         self.audio_config = WhisperConfig(**audio_config)
         self.encoder = MiniCPMWhisperEncoder(self.audio_config)
         

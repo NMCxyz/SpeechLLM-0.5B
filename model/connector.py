@@ -152,8 +152,8 @@ class MultiModalConnector(nn.Module):
         super().__init__()
         self.avg_pooler = nn.AvgPool1d(k, stride=k) 
         self.projection_layer = MultiModalProjector(in_dim=in_dim, out_dim=out_dim)
-        self.avg_pooler_path = "/mnt/4T2/thuctap/cuongnm75/MultimodalVisualVideoStreaming/EOT/whisper_streaming/speech_encoder/weights/audio_avg_pooler_weights.pth"
-        self.projection_path = "/mnt/4T2/thuctap/cuongnm75/MultimodalVisualVideoStreaming/EOT/whisper_streaming/speech_encoder/weights/audio_projection_layer_weights.pth"
+        self.avg_pooler_path = "./whisper_streaming/speech_encoder/weights/audio_avg_pooler_weights.pth"
+        self.projection_path = "./whisper_streaming/speech_encoder/weights/audio_projection_layer_weights.pth"
         self.avg_pooler.load_state_dict(torch.load(self.avg_pooler_path, map_location="cpu"))
         self.projection_layer.load_state_dict(torch.load(self.projection_path, map_location="cpu"))
         print("Loaded pretrained weights for connector components")
