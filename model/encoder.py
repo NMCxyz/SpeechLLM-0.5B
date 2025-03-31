@@ -5,7 +5,7 @@ from torch import nn
 from transformers import AutoModel
 sys.path.append("./whisper_streaming/speech_encoder")
 from minicpmo_whisper import MiniCPMO_Whisper, MiniCPMWhisperEncoder, WhisperConfig
-from speechtokenizer import SpeechTokenizer
+
 
 def get_audio_encoder(name, finetune_encoder):
     if name == 'minicpm-o':
@@ -44,7 +44,7 @@ class TransformerAudioEnoder(nn.Module):
 
 
 if __name__ == "__main__":
-    model = SpeechTokenizerEnoder()
+
     # print(model)
 
     x = torch.randn(2, 1, 16000)
